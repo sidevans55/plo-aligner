@@ -262,14 +262,13 @@ class CPFComparator:
                 'best_match': plo_matches[0] if plo_matches else None
             })
         
-        # Build crosswalk matrix
+        # Build crosswalk matrix (simplified for deployment)
         for i, cpf_item in enumerate(crosswalk_matrix['cpf_plos']):
             cpf_plo = cpf_item['plo']
-            cpf_emb = self.model.encode(cpf_plo, convert_to_tensor=True)
             
             for j, inst_plo in enumerate(institutional_plos):
-                inst_emb = self.model.encode(inst_plo, convert_to_tensor=True)
-                similarity = util.cos_sim(inst_emb, cpf_emb).item()
+                # Use simple similarity calculation for deployment
+                similarity = self._calculate_simple_similarity(inst_plo, cpf_plo)
                 
                 # Find common terms
                 common_terms = self._find_common_terms(inst_plo, cpf_plo)

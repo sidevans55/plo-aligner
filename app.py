@@ -54,7 +54,8 @@ def load_user(user_id):
 cpf_comparator = CPFComparator()
 
 # Make enumerate available in templates
-app.jinja_env.globals.update(enumerate=enumerate)
+with app.app_context():
+    app.jinja_env.globals.update(enumerate=enumerate)
 
 @app.route('/')
 def index():

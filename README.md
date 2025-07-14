@@ -196,4 +196,4 @@ For technical support or questions about the Canadian Program Framework, please 
 
 ---
 
-**Note**: This platform is designed to support institutions in aligning their PLOs with Canadian standards. The AI analysis provides guidance but should be reviewed by educational professionals for final decisions. 
+**Note**: This platform is designed to support institutions in aligning their PLOs with Canadian standards. The AI analysis provides guidance but should be reviewed by educational professionals for final decisions. # Updated deployment

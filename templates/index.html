@@ -1,0 +1,246 @@
+{% extends "base.html" %}
+
+{% block title %}PLO Comparison Platform - Home{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6">
+                <h1 class="display-4 fw-bold mb-4">
+                    Compare Your Learning Outcomes with the Canadian Program Framework
+                </h1>
+                <p class="lead mb-4">
+                    Our AI-powered platform helps institutions align their Program Learning Outcomes (PLOs) 
+                    with the Canadian Program Framework, providing detailed analysis and actionable recommendations.
+                </p>
+                {% if not current_user.is_authenticated %}
+                <div class="d-flex gap-3">
+                    <a href="{{ url_for('register') }}" class="btn btn-light btn-lg">
+                        <i class="fas fa-user-plus me-2"></i>Get Started
+                    </a>
+                    <a href="{{ url_for('login') }}" class="btn btn-outline-light btn-lg">
+                        <i class="fas fa-sign-in-alt me-2"></i>Login
+                    </a>
+                </div>
+                {% else %}
+                <a href="{{ url_for('compare_plos') }}" class="btn btn-light btn-lg">
+                    <i class="fas fa-chart-line me-2"></i>Start Comparison
+                </a>
+                {% endif %}
+            </div>
+            <div class="col-lg-6 text-center">
+                <i class="fas fa-chart-pie" style="font-size: 200px; opacity: 0.3;"></i>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="py-5">
+    <div class="container">
+        <div class="row text-center mb-5">
+            <div class="col-12">
+                <h2 class="fw-bold">Platform Features</h2>
+                <p class="text-muted">Comprehensive tools for PLO analysis and alignment</p>
+            </div>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card h-100 text-center p-4">
+                    <div class="card-body">
+                        <i class="fas fa-brain text-primary mb-3" style="font-size: 3rem;"></i>
+                        <h5 class="card-title">AI-Powered Analysis</h5>
+                        <p class="card-text">
+                            Advanced semantic similarity analysis using state-of-the-art language models 
+                            to accurately compare your PLOs with the CPF framework.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card h-100 text-center p-4">
+                    <div class="card-body">
+                        <i class="fas fa-chart-bar text-success mb-3" style="font-size: 3rem;"></i>
+                        <h5 class="card-title">Detailed Visualizations</h5>
+                        <p class="card-text">
+                            Interactive charts and graphs showing alignment scores across Knowledge, 
+                            Skills, and Values themes with actionable insights.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card h-100 text-center p-4">
+                    <div class="card-body">
+                        <i class="fas fa-file-upload text-warning mb-3" style="font-size: 3rem;"></i>
+                        <h5 class="card-title">Easy Upload</h5>
+                        <p class="card-text">
+                            Upload CSV files or enter PLOs directly. Our platform handles the rest, 
+                            providing comprehensive analysis and recommendations.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CPF Framework Section -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-6">
+                <h2 class="fw-bold mb-4">Canadian Program Framework</h2>
+                <p class="lead mb-4">
+                    The CPF provides a comprehensive framework for biological sciences education, 
+                    organized around three core themes:
+                </p>
+                
+                <div class="row g-3">
+                    <div class="col-12">
+                        <div class="card theme-knowledge">
+                            <div class="card-body">
+                                <h6 class="card-title text-primary">
+                                    <i class="fas fa-lightbulb me-2"></i>Knowledge
+                                </h6>
+                                <p class="card-text small">
+                                    Core biological concepts, interdisciplinary knowledge, and understanding of scientific methodology.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-12">
+                        <div class="card theme-skills">
+                            <div class="card-body">
+                                <h6 class="card-title text-success">
+                                    <i class="fas fa-tools me-2"></i>Skills
+                                </h6>
+                                <p class="card-text small">
+                                    Experimental design, data analysis, communication, collaboration, and technical competencies.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-12">
+                        <div class="card theme-values">
+                            <div class="card-body">
+                                <h6 class="card-title text-warning">
+                                    <i class="fas fa-heart me-2"></i>Values
+                                </h6>
+                                <p class="card-text small">
+                                    Ethical responsibility, societal impact awareness, and commitment to lifelong learning.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Sample Analysis</h5>
+                        <p class="card-text">See how our platform analyzes PLO alignment:</p>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Sample Institutional PLO:</label>
+                            <div class="form-control-plaintext bg-light p-3 rounded">
+                                "Apply mathematical and computational tools to analyze biological datasets."
+                            </div>
+                        </div>
+                        
+                        <div class="row text-center">
+                            <div class="col-4">
+                                <div class="border rounded p-3">
+                                    <h6 class="text-primary">Knowledge</h6>
+                                    <span class="score-high fw-bold">0.85</span>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="border rounded p-3">
+                                    <h6 class="text-success">Skills</h6>
+                                    <span class="score-high fw-bold">0.92</span>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="border rounded p-3">
+                                    <h6 class="text-warning">Values</h6>
+                                    <span class="score-medium fw-bold">0.45</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-3">
+                            <small class="text-muted">
+                                <strong>Recommendation:</strong> Consider adding PLOs that address ethical considerations 
+                                in data analysis and computational biology.
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- How It Works Section -->
+<section class="py-5">
+    <div class="container">
+        <div class="row text-center mb-5">
+            <div class="col-12">
+                <h2 class="fw-bold">How It Works</h2>
+                <p class="text-muted">Simple steps to get your PLO analysis</p>
+            </div>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-md-3 text-center">
+                <div class="position-relative">
+                    <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                        <span class="fw-bold">1</span>
+                    </div>
+                    <h5>Register</h5>
+                    <p class="text-muted">Create your institution account</p>
+                </div>
+            </div>
+            
+            <div class="col-md-3 text-center">
+                <div class="position-relative">
+                    <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                        <span class="fw-bold">2</span>
+                    </div>
+                    <h5>Upload PLOs</h5>
+                    <p class="text-muted">Enter or upload your learning outcomes</p>
+                </div>
+            </div>
+            
+            <div class="col-md-3 text-center">
+                <div class="position-relative">
+                    <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                        <span class="fw-bold">3</span>
+                    </div>
+                    <h5>Analyze</h5>
+                    <p class="text-muted">AI-powered comparison with CPF</p>
+                </div>
+            </div>
+            
+            <div class="col-md-3 text-center">
+                <div class="position-relative">
+                    <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                        <span class="fw-bold">4</span>
+                    </div>
+                    <h5>Review</h5>
+                    <p class="text-muted">Get detailed reports and recommendations</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %} 

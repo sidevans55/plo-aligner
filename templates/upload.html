@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-upload me-2"></i>Upload PLOs
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-info-circle me-2"></i>Supported File Formats:</h6>
+                        <ul class="mb-0">
+                            <li><strong>CSV (.csv)</strong> - Comma-separated values with PLOs in a column</li>
+                            <li><strong>Excel (.xlsx, .xls)</strong> - Excel spreadsheets with PLOs in a column</li>
+                            <li><strong>Text (.txt)</strong> - Plain text file with one PLO per line</li>
+                        </ul>
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <h6><i class="fas fa-exclamation-triangle me-2"></i>File Requirements:</h6>
+                        <ul class="mb-0">
+                            <li>For CSV/Excel files: Look for columns named "PLO", "Learning Outcome", "Outcome", "PLO Text", or "Description"</li>
+                            <li>If no PLO column is found, the first column will be used</li>
+                            <li>For text files: Each line should contain one PLO</li>
+                            <li>Empty lines and invalid entries will be automatically filtered out</li>
+                        </ul>
+                    </div>
+
+                    <form method="POST" enctype="multipart/form-data">
+                        <div class="mb-4">
+                            <label for="file" class="form-label fw-bold">Select File:</label>
+                            <input type="file" class="form-control" id="file" name="file" accept=".csv,.xlsx,.xls,.txt" required>
+                            <div class="form-text">Maximum file size: 10MB</div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-upload me-2"></i>Upload and Analyze
+                            </button>
+                            <a href="{{ url_for('compare_plos') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-edit me-2"></i>Enter PLOs Manually Instead
+                            </a>
+                        </div>
+                    </form>
+
+                    {% with messages = get_flashed_messages() %}
+                        {% if messages %}
+                            <div class="mt-4">
+                                {% for message in messages %}
+                                    <div class="alert alert-danger">
+                                        <i class="fas fa-exclamation-circle me-2"></i>{{ message }}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    {% endwith %}
+                </div>
+            </div>
+
+            <!-- Example File Formats -->
+            <div class="row mt-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0"><i class="fas fa-file-csv me-2"></i>CSV Example</h6>
+                        </div>
+                        <div class="card-body">
+                            <pre class="mb-0" style="font-size: 0.8em;">PLO,Description
+1,Students will demonstrate understanding of core biological concepts
+2,Students will apply the scientific method to investigate problems
+3,Students will communicate biological information effectively</pre>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0"><i class="fas fa-file-alt me-2"></i>Text File Example</h6>
+                        </div>
+                        <div class="card-body">
+                            <pre class="mb-0" style="font-size: 0.8em;">Students will demonstrate understanding of core biological concepts
+Students will apply the scientific method to investigate problems
+Students will communicate biological information effectively</pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

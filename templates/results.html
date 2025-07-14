@@ -1,0 +1,570 @@
+{% extends "base.html" %}
+
+{% block title %}Analysis Results - PLO Comparison Platform{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-1">
+                        <i class="fas fa-chart-line text-primary me-2"></i>
+                        CPF Alignment Results
+                    </h2>
+                    <p class="text-muted mb-0">Submission: {{ submission_name }}</p>
+                </div>
+                <div class="text-end">
+                    <span class="badge bg-primary fs-6">{{ results.summary.total_plos_analyzed }} PLOs Analyzed</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 class="card-title text-primary">{{ "%.1f"|format(results.summary.overall_alignment_score * 100) }}%</h3>
+                    <p class="card-text">Overall Alignment</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 class="card-title text-success">{{ "%.1f"|format(results.summary.theme_averages.Knowledge * 100) }}%</h3>
+                    <p class="card-text">Knowledge</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 class="card-title text-info">{{ "%.1f"|format(results.summary.theme_averages.Skills * 100) }}%</h3>
+                    <p class="card-text">Skills</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 class="card-title text-warning">{{ "%.1f"|format(results.summary.theme_averages.Values * 100) }}%</h3>
+                    <p class="card-text">Values</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Crosswalk Matrix -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-table me-2"></i>CPF Crosswalk Matrix
+                    </h5>
+                    <small class="text-muted">Each cell shows similarity score and color-coded alignment (Green: ≥0.7, Yellow: 0.5-0.7, Red: <0.5)</small>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive" style="max-height: 600px; overflow-y: auto;">
+                        <table class="table table-sm table-bordered">
+                            <thead class="table-light sticky-top">
+                                <tr>
+                                    <th style="min-width: 350px;">CPF Learning Outcomes</th>
+                                    {% for plo in results.crosswalk_matrix.institutional_plos %}
+                                    <th style="min-width: 200px; max-width: 200px; font-size: 0.8em; vertical-align: middle;">
+                                        <div class="text-wrap">{{ plo[:100] }}{% if plo|length > 100 %}...{% endif %}</div>
+                                    </th>
+                                    {% endfor %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for i, cpf_item in enumerate(results.crosswalk_matrix.cpf_plos) %}
+                                <tr>
+                                    <td class="fw-bold" style="background-color: #f8f9fa;">
+                                        <div class="d-flex align-items-start">
+                                            <span class="badge 
+                                                {% if cpf_item.theme == 'Knowledge' %}bg-success
+                                                {% elif cpf_item.theme == 'Skills' %}bg-warning
+                                                {% else %}bg-info{% endif %} me-2">
+                                                {{ cpf_item.theme }}
+                                            </span>
+                                            <div class="text-wrap" style="font-size: 0.85em;">
+                                                <strong>{{ cpf_item.heading }}</strong><br>
+                                                {{ cpf_item.plo[:120] }}{% if cpf_item.plo|length > 120 %}...{% endif %}
+                                            </div>
+                                        </div>
+                                    </td>
+                                    {% for j, inst_plo in enumerate(results.crosswalk_matrix.institutional_plos) %}
+                                    {% set matrix_key = i|string + '_' + j|string %}
+                                    {% set cell_data = results.crosswalk_matrix.matrix[matrix_key] %}
+                                    <td class="text-center align-middle" 
+                                        style="background-color: 
+                                            {% if cell_data.alignment_type == 'Full' %}#d4edda
+                                            {% elif cell_data.alignment_type == 'Partial' %}#fff3cd
+                                            {% else %}#f8d7da{% endif %};
+                                        border: 2px solid 
+                                            {% if cell_data.alignment_type == 'Full' %}#28a745
+                                            {% elif cell_data.alignment_type == 'Partial' %}#ffc107
+                                            {% else %}#dc3545{% endif %};">
+                                        <div class="fw-bold 
+                                            {% if cell_data.alignment_type == 'Full' %}text-success
+                                            {% elif cell_data.alignment_type == 'Partial' %}text-warning
+                                            {% else %}text-danger{% endif %}">
+                                            {{ "%.3f"|format(cell_data.score) }}
+                                        </div>
+                                        <small class="text-muted">
+                                            {% if cell_data.alignment_type == 'Full' %}Full
+                                            {% elif cell_data.alignment_type == 'Partial' %}Partial
+                                            {% else %}None{% endif %}
+                                        </small>
+                                        {% if cell_data.bloom_alignment %}
+                                        <div class="mt-1">
+                                            <i class="fas fa-brain text-info" title="Bloom's Taxonomy Alignment"></i>
+                                        </div>
+                                        {% endif %}
+                                    </td>
+                                    {% endfor %}
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scoring Explanation -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-info-circle me-2"></i>Scoring Methodology
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Similarity Scoring:</h6>
+                            <ul>
+                                <li><strong>Semantic Similarity (0.0-1.0):</strong> Uses AI to compare meaning and content between PLOs</li>
+                                <li><strong>≥0.7 (Green):</strong> Full alignment - both content and depth match</li>
+                                <li><strong>0.5-0.7 (Yellow):</strong> Partial alignment - content matches but depth may differ</li>
+                                <li><strong><0.5 (Red):</strong> No alignment - minimal content overlap</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Bloom's Taxonomy Analysis:</h6>
+                            <ul>
+                                <li><strong>Content Analysis:</strong> Identifies common key terms between PLOs</li>
+                                <li><strong>Depth Analysis:</strong> Compares cognitive levels (remember, understand, apply, analyze, evaluate, create)</li>
+                                <li><strong>Brain Icon:</strong> Indicates matching Bloom's Taxonomy levels</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detailed Similarity Analysis -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-search me-2"></i>Detailed Similarity Analysis
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="accordion" id="similarityAccordion">
+                        {% for i, result in enumerate(results.detailed_results) %}
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="similarityHeading{{ i }}">
+                                <button class="accordion-button {% if not loop.first %}collapsed{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#similarityCollapse{{ i }}">
+                                    <div class="d-flex justify-content-between align-items-center w-100 me-3">
+                                        <span class="text-truncate">{{ result.institutional_plo }}</span>
+                                        {% if result.best_match %}
+                                        <span class="badge bg-primary ms-2">
+                                            {{ result.best_match.cpf_theme }}: {{ "%.3f"|format(result.best_match.similarity_score) }}
+                                        </span>
+                                        {% endif %}
+                                    </div>
+                                </button>
+                            </h2>
+                            <div id="similarityCollapse{{ i }}" class="accordion-collapse collapse {% if loop.first %}show{% endif %}" data-bs-parent="#similarityAccordion">
+                                <div class="accordion-body">
+                                    <h6>Top CPF Matches with Similarity Analysis:</h6>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm">
+                                            <thead>
+                                                <tr>
+                                                    <th>Theme & Heading</th>
+                                                    <th>CPF PLO</th>
+                                                    <th>Similarity Score</th>
+                                                    <th>Alignment</th>
+                                                    <th>Common Terms</th>
+                                                    <th>Bloom's Analysis</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for match in result.matches[:5] %}
+                                                <tr>
+                                                    <td>
+                                                        <span class="badge 
+                                                            {% if match.cpf_theme == 'Knowledge' %}bg-primary
+                                                            {% elif match.cpf_theme == 'Skills' %}bg-success
+                                                            {% else %}bg-warning{% endif %}">
+                                                            {{ match.cpf_theme }}
+                                                        </span>
+                                                        <br>
+                                                        <small class="text-muted">{{ match.cpf_heading }}</small>
+                                                    </td>
+                                                    <td>{{ match.cpf_plo }}</td>
+                                                    <td>
+                                                        <span class="fw-bold 
+                                                            {% if match.similarity_score >= 0.7 %}text-success
+                                                            {% elif match.similarity_score >= 0.5 %}text-warning
+                                                            {% else %}text-danger{% endif %}">
+                                                            {{ "%.3f"|format(match.similarity_score) }}
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge 
+                                                            {% if match.alignment_score == 1.0 %}bg-success
+                                                            {% elif match.alignment_score == 0.5 %}bg-warning
+                                                            {% else %}bg-danger{% endif %}">
+                                                            {% if match.alignment_type == 'Full' %}Full
+                                                            {% elif match.alignment_type == 'Partial' %}Partial
+                                                            {% else %}None{% endif %}
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        {% if match.common_terms %}
+                                                        <div class="d-flex flex-wrap gap-1">
+                                                            {% for term in match.common_terms[:5] %}
+                                                            <span class="badge bg-light text-dark">{{ term }}</span>
+                                                            {% endfor %}
+                                                            {% if match.common_terms|length > 5 %}
+                                                            <span class="badge bg-secondary">+{{ match.common_terms|length - 5 }} more</span>
+                                                            {% endif %}
+                                                        </div>
+                                                        {% else %}
+                                                        <span class="text-muted">No common terms</span>
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>
+                                                        {% if match.bloom_alignment %}
+                                                        <div class="d-flex flex-wrap gap-1">
+                                                            {% for level, present in match.inst_bloom.items() %}
+                                                            {% if present and match.cpf_bloom[level] %}
+                                                            <span class="badge bg-info">{{ level }}</span>
+                                                            {% endif %}
+                                                            {% endfor %}
+                                                        </div>
+                                                        <i class="fas fa-brain text-info mt-1" title="Bloom's Taxonomy Alignment"></i>
+                                                        {% else %}
+                                                        <span class="text-muted">No Bloom alignment</span>
+                                                        {% endif %}
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Theme Alignment</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="themeChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Alignment Distribution</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="distributionChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Theme Breakdown -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Theme Breakdown</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for theme, score in results.summary.theme_averages.items() %}
+                        <div class="col-md-4 mb-3">
+                            <div class="d-flex align-items-center">
+                                <div class="me-3">
+                                    {% if theme == 'Knowledge' %}
+                                        <i class="fas fa-lightbulb text-success me-2"></i>
+                                    {% elif theme == 'Skills' %}
+                                        <i class="fas fa-tools text-warning me-2"></i>
+                                    {% else %}
+                                        <i class="fas fa-heart text-purple me-2"></i>
+                                    {% endif %}
+                                    {{ theme }}
+                                </h6>
+                                <div class="progress mb-2">
+                                    <div class="progress-bar 
+                                        {% if score >= 0.7 %}bg-success
+                                        {% elif score >= 0.5 %}bg-warning
+                                        {% else %}bg-danger{% endif %}" 
+                                         style="width: {{ score * 100 }}%">
+                                        {{ "%.1f"|format(score * 100) }}%
+                                    </div>
+                                </div>
+                                <small class="text-muted">Score: {{ "%.3f"|format(score) }}</small>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recommendations -->
+    {% if results.recommendations %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">
+                        <i class="fas fa-lightbulb me-2"></i>Recommendations
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled mb-0">
+                        {% for recommendation in results.recommendations %}
+                        <li class="mb-2">
+                            <i class="fas fa-arrow-right text-warning me-2"></i>
+                            {{ recommendation }}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Detailed Results -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Detailed PLO Analysis</h5>
+                </div>
+                <div class="card-body">
+                    <div class="accordion" id="ploAccordion">
+                        {% for i, result in enumerate(results.detailed_results) %}
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="heading{{ i }}">
+                                <button class="accordion-button {% if not loop.first %}collapsed{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ i }}">
+                                    <div class="d-flex justify-content-between align-items-center w-100 me-3">
+                                        <span class="text-truncate">{{ result.institutional_plo }}</span>
+                                        {% if result.best_match %}
+                                        <span class="badge bg-primary ms-2">
+                                            {{ result.best_match.cpf_theme }}: {{ "%.3f"|format(result.best_match.similarity_score) }}
+                                        </span>
+                                        {% endif %}
+                                    </div>
+                                </button>
+                            </h2>
+                            <div id="collapse{{ i }}" class="accordion-collapse collapse {% if loop.first %}show{% endif %}" data-bs-parent="#ploAccordion">
+                                <div class="accordion-body">
+                                    <h6>Top CPF Matches:</h6>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm">
+                                            <thead>
+                                                <tr>
+                                                    <th>Theme & Heading</th>
+                                                    <th>CPF PLO</th>
+                                                    <th>Similarity Score</th>
+                                                    <th>Alignment</th>
+                                                    <th>Common Terms</th>
+                                                    <th>Bloom's Analysis</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for match in result.matches[:5] %}
+                                                <tr>
+                                                    <td>
+                                                        <span class="badge 
+                                                            {% if match.cpf_theme == 'Knowledge' %}bg-primary
+                                                            {% elif match.cpf_theme == 'Skills' %}bg-success
+                                                            {% else %}bg-warning{% endif %}">
+                                                            {{ match.cpf_theme }}
+                                                        </span>
+                                                        <br>
+                                                        <small class="text-muted">{{ match.cpf_heading }}</small>
+                                                    </td>
+                                                    <td>{{ match.cpf_plo }}</td>
+                                                    <td>
+                                                        <span class="fw-bold 
+                                                            {% if match.similarity_score >= 0.7 %}text-success
+                                                            {% elif match.similarity_score >= 0.5 %}text-warning
+                                                            {% else %}text-danger{% endif %}">
+                                                            {{ "%.3f"|format(match.similarity_score) }}
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge 
+                                                            {% if match.alignment_score == 1.0 %}bg-success
+                                                            {% elif match.alignment_score == 0.5 %}bg-warning
+                                                            {% else %}bg-danger{% endif %}">
+                                                            {% if match.alignment_type == 'Full' %}Full
+                                                            {% elif match.alignment_type == 'Partial' %}Partial
+                                                            {% else %}None{% endif %}
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        {% if match.common_terms %}
+                                                        <div class="d-flex flex-wrap gap-1">
+                                                            {% for term in match.common_terms[:5] %}
+                                                            <span class="badge bg-light text-dark">{{ term }}</span>
+                                                            {% endfor %}
+                                                            {% if match.common_terms|length > 5 %}
+                                                            <span class="badge bg-secondary">+{{ match.common_terms|length - 5 }} more</span>
+                                                            {% endif %}
+                                                        </div>
+                                                        {% else %}
+                                                        <span class="text-muted">No common terms</span>
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>
+                                                        {% if match.bloom_alignment %}
+                                                        <div class="d-flex flex-wrap gap-1">
+                                                            {% for level, present in match.inst_bloom.items() %}
+                                                            {% if present and match.cpf_bloom[level] %}
+                                                            <span class="badge bg-info">{{ level }}</span>
+                                                            {% endif %}
+                                                            {% endfor %}
+                                                        </div>
+                                                        <i class="fas fa-brain text-info mt-1" title="Bloom's Taxonomy Alignment"></i>
+                                                        {% else %}
+                                                        <span class="text-muted">No Bloom alignment</span>
+                                                        {% endif %}
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Theme Chart
+const themeCtx = document.getElementById('themeChart').getContext('2d');
+const themeChart = new Chart(themeCtx, {
+    type: 'radar',
+    data: {
+        labels: ['Knowledge', 'Skills', 'Values'],
+        datasets: [{
+            label: 'Alignment Score',
+            data: [
+                {{ results.summary.theme_averages.Knowledge }},
+                {{ results.summary.theme_averages.Skills }},
+                {{ results.summary.theme_averages.Values }}
+            ],
+            backgroundColor: 'rgba(102, 126, 234, 0.2)',
+            borderColor: 'rgba(102, 126, 234, 1)',
+            borderWidth: 2,
+            pointBackgroundColor: 'rgba(102, 126, 234, 1)',
+            pointBorderColor: '#fff',
+            pointHoverBackgroundColor: '#fff',
+            pointHoverBorderColor: 'rgba(102, 126, 234, 1)'
+        }]
+    },
+    options: {
+        scales: {
+            r: {
+                beginAtZero: true,
+                max: 1,
+                ticks: {
+                    stepSize: 0.2
+                }
+            }
+        },
+        plugins: {
+            legend: {
+                display: false
+            }
+        }
+    }
+});
+
+// Distribution Chart
+const distributionCtx = document.getElementById('distributionChart').getContext('2d');
+const distributionChart = new Chart(distributionCtx, {
+    type: 'doughnut',
+    data: {
+        labels: ['High Alignment (≥0.7)', 'Medium Alignment (0.5-0.7)', 'Low Alignment (<0.5)'],
+        datasets: [{
+            data: [
+                {{ results.detailed_results | selectattr('best_match.similarity_score', '>=', 0.7) | list | length }},
+                {{ results.detailed_results | selectattr('best_match.similarity_score', '>=', 0.5) | selectattr('best_match.similarity_score', '<', 0.7) | list | length }},
+                {{ results.detailed_results | selectattr('best_match.similarity_score', '<', 0.5) | list | length }}
+            ],
+            backgroundColor: [
+                'rgba(40, 167, 69, 0.8)',
+                'rgba(255, 193, 7, 0.8)',
+                'rgba(220, 53, 69, 0.8)'
+            ],
+            borderColor: [
+                'rgba(40, 167, 69, 1)',
+                'rgba(255, 193, 7, 1)',
+                'rgba(220, 53, 69, 1)'
+            ],
+            borderWidth: 2
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+</script>
+{% endblock %} 

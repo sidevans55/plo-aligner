@@ -284,7 +284,7 @@ if __name__ == '__main__':
     with app.app_context():
         db.create_all()
     # Run on all network interfaces for local network sharing
-  if __name__ == "__main__":
+if __name__ == "__main__":
     app.run(debug=False)
 
 # For Vercel deployment

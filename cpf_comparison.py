@@ -210,8 +210,11 @@ class CPFComparator:
             alignment_type = "None"
             explanation = "Limited content similarity and/or limited learning-depth alignment."
 
+        rounded_similarity = round(similarity, 3)
+
         return {
-            "similarity_score": round(similarity, 3),
+            "score": rounded_similarity,
+            "similarity_score": rounded_similarity,
             "alignment_score": score,
             "color": color,
             "common_terms": common_terms,

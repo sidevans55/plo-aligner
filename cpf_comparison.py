@@ -169,33 +169,85 @@ class CPFComparator:
         
         return min(similarity, 1.0)  # Cap at 1.0
 
+    def _compare_two_plos(self, inst_plo: str, cpf_plo: str) -> Dict[str, Any]:
+        """Compare one institutional PLO to one CPF PLO."""
+
+        if SENTENCE_TRANSFORMERS_AVAILABLE and self.model:
+            inst_emb = self.model.encode(inst_plo, convert_to_tensor=True)
+            cpf_emb = self.model.encode(cpf_plo, convert_to_tensor=True)
+            similarity = util.cos_sim(inst_emb, cpf_emb).item()
+        else:
+            similarity = self._calculate_simple_similarity(inst_plo, cpf_plo)
+
+        common_terms = self._find_common_terms(inst_plo, cpf_plo)
+
+        inst_bloom = self._analyze_bloom_taxonomy(inst_plo)
+        cpf_bloom = self._analyze_bloom_taxonomy(cpf_plo)
+
+        bloom_alignment = any(
+            inst_bloom[level] and cpf_bloom[level]
+            for level in inst_bloom.keys()
+        )
+
+        if similarity >= 0.7 and bloom_alignment:
+            score = 1.0
+            color = "green"
+            alignment_type = "Full"
+            explanation = "Strong content similarity and similar depth of learning."
+        elif similarity >= 0.5:
+            score = 0.5
+            color = "yellow"
+            alignment_type = "Partial"
+            explanation = "Some content similarity, but the match may not fully capture the same depth or focus."
+        elif bloom_alignment and similarity >= 0.3:
+            score = 0.5
+            color = "yellow"
+            alignment_type = "Partial"
+            explanation = "Similar learning depth, but weaker content similarity."
+        else:
+            score = 0.0
+            color = "red"
+            alignment_type = "None"
+            explanation = "Limited content similarity and/or limited learning-depth alignment."
+
+        return {
+            "similarity_score": round(similarity, 3),
+            "alignment_score": score,
+            "color": color,
+            "common_terms": common_terms,
+            "bloom_alignment": bloom_alignment,
+            "inst_bloom": inst_bloom,
+            "cpf_bloom": cpf_bloom,
+            "alignment_type": alignment_type,
+            "explanation": explanation
+        }
+
     def compare_plos(self, institutional_plos: List[str]) -> Dict[str, Any]:
         """
-        Compare institutional PLOs with CPF framework using the user's specific criteria:
-        - Content alignment (0.5 if content matches)
-        - Depth of learning alignment (1.0 if both content and depth match)
-        - Threshold for "match" is 0.7
+        Compare institutional PLOs with CPF framework using:
+        - semantic or keyword-based content similarity
+        - Bloom's Taxonomy learning-depth alignment
+        - CPF coverage by theme
         """
         results = {
             'summary': {},
             'detailed_results': [],
             'theme_breakdown': {},
             'recommendations': [],
-            'crosswalk_matrix': {}
+            'crosswalk_matrix': {},
+            'coverage': {}
         }
-        
-        # Compare each institutional PLO with all CPF PLOs
+
         detailed_results = []
         theme_scores = {'Knowledge': [], 'Skills': [], 'Values': []}
-        
-        # Create crosswalk matrix structure
+
         crosswalk_matrix = {
             'cpf_plos': [],
             'institutional_plos': institutional_plos,
             'matrix': {}
         }
-        
-        # Initialize matrix with CPF PLOs
+
+        # Add all CPF PLOs to the matrix header
         for theme, headings in self.cpf_plos.items():
             for heading, plos in headings.items():
                 for plo in plos:
@@ -204,145 +256,117 @@ class CPFComparator:
                         'heading': heading,
                         'plo': plo
                     })
-        
+
+        # Detailed comparison: each institutional PLO against each CPF PLO
         for inst_plo in institutional_plos:
             plo_matches = []
-            
+
             for theme, heading, cpf_plo in self.flattened_cpf:
-                # Calculate similarity using available method
-                if SENTENCE_TRANSFORMERS_AVAILABLE and self.model:
-                    inst_emb = self.model.encode(inst_plo, convert_to_tensor=True)
-                    cpf_emb = self.model.encode(cpf_plo, convert_to_tensor=True)
-                    similarity = util.cos_sim(inst_emb, cpf_emb).item()
-                else:
-                    similarity = self._calculate_simple_similarity(inst_plo, cpf_plo)
-                
-                # Find common terms for explanation
-                common_terms = self._find_common_terms(inst_plo, cpf_plo)
-                
-                # Analyze Bloom's Taxonomy levels
-                inst_bloom = self._analyze_bloom_taxonomy(inst_plo)
-                cpf_bloom = self._analyze_bloom_taxonomy(cpf_plo)
-                
-                # Check for Bloom's Taxonomy alignment
-                bloom_alignment = any(inst_bloom[level] and cpf_bloom[level] for level in inst_bloom.keys())
-                
-                # Apply user's scoring criteria
-                if similarity >= 0.7:
-                    score = 1.0  # Full alignment (green)
-                    alignment_type = "Full"
-                elif similarity >= 0.5:
-                    score = 0.5  # Partial alignment (yellow)
-                    alignment_type = "Partial"
-                else:
-                    score = 0.0  # No alignment (red)
-                    alignment_type = "None"
-                
+                comparison = self._compare_two_plos(inst_plo, cpf_plo)
+
                 plo_matches.append({
-                    'cpf_theme': theme,
-                    'cpf_heading': heading,
-                    'cpf_plo': cpf_plo,
-                    'similarity_score': round(similarity, 3),
-                    'alignment_score': score,
-                    'common_terms': common_terms,
-                    'bloom_alignment': bloom_alignment,
-                    'inst_bloom': inst_bloom,
-                    'cpf_bloom': cpf_bloom,
-                    'alignment_type': alignment_type
+                    "cpf_theme": theme,
+                    "cpf_heading": heading,
+                    "cpf_plo": cpf_plo,
+                    **comparison
                 })
-                
-                theme_scores[theme].append(similarity)
-            
-            # Sort matches by similarity score
+
+                theme_scores[theme].append(comparison["similarity_score"])
+
             plo_matches.sort(key=lambda x: x['similarity_score'], reverse=True)
-            
+
             detailed_results.append({
                 'institutional_plo': inst_plo,
                 'matches': plo_matches,
                 'best_match': plo_matches[0] if plo_matches else None
             })
-        
-        # Build crosswalk matrix (simplified for deployment)
+
+        # Crosswalk matrix: each CPF PLO against each institutional PLO
         for i, cpf_item in enumerate(crosswalk_matrix['cpf_plos']):
             cpf_plo = cpf_item['plo']
-            
+
             for j, inst_plo in enumerate(institutional_plos):
-                # Use simple similarity calculation for deployment
-                similarity = self._calculate_simple_similarity(inst_plo, cpf_plo)
-                
-                # Find common terms
-                common_terms = self._find_common_terms(inst_plo, cpf_plo)
-                
-                # Analyze Bloom's Taxonomy
-                inst_bloom = self._analyze_bloom_taxonomy(inst_plo)
-                cpf_bloom = self._analyze_bloom_taxonomy(cpf_plo)
-                bloom_alignment = any(inst_bloom[level] and cpf_bloom[level] for level in inst_bloom.keys())
-                
-                # Apply scoring criteria
-                if similarity >= 0.7:
-                    score = 1.0
-                    color = 'green'
-                    alignment_type = "Full"
-                elif similarity >= 0.5:
-                    score = 0.5
-                    color = 'yellow'
-                    alignment_type = "Partial"
-                else:
-                    score = 0.0
-                    color = 'red'
-                    alignment_type = "None"
-                
+                comparison = self._compare_two_plos(inst_plo, cpf_plo)
                 matrix_key = f"{i}_{j}"
-                crosswalk_matrix['matrix'][matrix_key] = {
-                    'score': round(similarity, 3),
-                    'alignment_score': score,
-                    'color': color,
-                    'common_terms': common_terms,
-                    'bloom_alignment': bloom_alignment,
-                    'alignment_type': alignment_type,
-                    'inst_bloom': inst_bloom,
-                    'cpf_bloom': cpf_bloom
-                }
-        
+                crosswalk_matrix["matrix"][matrix_key] = comparison
+
+        # Coverage scoring: which CPF PLOs have at least partial coverage?
+        covered_cpf_plos = []
+        missing_cpf_plos = []
+
+        coverage_by_theme = {
+            "Knowledge": {"covered": 0, "total": 0},
+            "Skills": {"covered": 0, "total": 0},
+            "Values": {"covered": 0, "total": 0}
+        }
+
+        for i, cpf_item in enumerate(crosswalk_matrix["cpf_plos"]):
+            theme = cpf_item["theme"]
+            coverage_by_theme[theme]["total"] += 1
+
+            matched = False
+
+            for j, inst_plo in enumerate(institutional_plos):
+                matrix_key = f"{i}_{j}"
+
+                if crosswalk_matrix["matrix"][matrix_key]["alignment_score"] >= 0.5:
+                    matched = True
+                    break
+
+            if matched:
+                covered_cpf_plos.append(cpf_item)
+                coverage_by_theme[theme]["covered"] += 1
+            else:
+                missing_cpf_plos.append(cpf_item)
+
+        for theme in coverage_by_theme:
+            total = coverage_by_theme[theme]["total"]
+            covered = coverage_by_theme[theme]["covered"]
+            coverage_by_theme[theme]["coverage_percent"] = round((covered / total) * 100, 1) if total else 0
+
         results['crosswalk_matrix'] = crosswalk_matrix
-        
-        # Calculate summary statistics
+
+        results["coverage"] = {
+            "covered_cpf_plos": covered_cpf_plos,
+            "missing_cpf_plos": missing_cpf_plos,
+            "coverage_by_theme": coverage_by_theme
+        }
+
         total_plos = len(institutional_plos)
+
         avg_scores = {}
         for theme in theme_scores:
             if theme_scores[theme]:
                 avg_scores[theme] = round(np.mean(theme_scores[theme]), 3)
             else:
                 avg_scores[theme] = 0.0
-        
-        # Calculate overall alignment score
+
         all_scores = [score for scores in theme_scores.values() for score in scores]
         overall_alignment = float(round(np.mean(all_scores), 3)) if all_scores else 0.0
-        
-        # Generate recommendations
+
         recommendations = self._generate_recommendations(avg_scores, overall_alignment)
-        
-        # Find strongest and weakest themes
+
         strongest_theme = None
         weakest_theme = None
         if avg_scores:
             strongest_theme = max(avg_scores.keys(), key=lambda k: avg_scores[k])
             weakest_theme = min(avg_scores.keys(), key=lambda k: avg_scores[k])
-        
+
         results['summary'] = {
             'total_plos_analyzed': total_plos,
             'overall_alignment_score': overall_alignment,
             'theme_averages': avg_scores,
             'strongest_theme': strongest_theme,
-            'weakest_theme': weakest_theme
+            'weakest_theme': weakest_theme,
+            'coverage_by_theme': coverage_by_theme
         }
-        
+
         results['detailed_results'] = detailed_results
         results['theme_breakdown'] = theme_scores
         results['recommendations'] = recommendations
-        
+
         return results
-    
+
     def _generate_recommendations(self, theme_scores: Dict[str, float], overall_alignment: float) -> List[str]:
         """Generate recommendations based on alignment scores"""
         recommendations = []
